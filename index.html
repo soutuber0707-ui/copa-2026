@@ -1295,6 +1295,7 @@ const VENUE_INFO={"Mexico City, Mexico":{stadium:"Estadio Azteca",city:"Cidade d
 function storageGet(key,fallback){try{return localStorage.getItem(key)||fallback}catch(e){return fallback}}function storageSet(key,value){try{localStorage.setItem(key,value)}catch(e){}}
 let groupMatches=JSON.parse(storageGet('copa2026_premium_matches','null'))||FALLBACK_MATCHES;
 let matches=[...groupMatches,...KNOCKOUT_MATCHES];let favorites=JSON.parse(storageGet('copa2026_favorites','[]'));let view='groups';let roundFilter='ALL';
+window.__copaGetGroupMatches=function(){return groupMatches};window.__copaSetGroupMatches=function(list){groupMatches=Array.isArray(list)?list:groupMatches;matches=[...groupMatches,...KNOCKOUT_MATCHES];storageSet('copa2026_premium_matches',JSON.stringify(groupMatches));try{fillFilter()}catch(e){}try{render()}catch(e){}};
 const el=id=>document.getElementById(id);const fmtDate=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});const fmtDateShort=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric'});const fmtTime=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});const fmtDayKey=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'});
 function enterApp(){let cover=document.getElementById('cover'),app=document.getElementById('app');if(cover)cover.style.display='none';if(app)app.style.display='block';window.scrollTo(0,0)}function toggleFilters(){el('controls').classList.toggle('open')}function teamName(n){return TEAM_PT[n]||n}function teamCode(n){return TEAM_CODES[n]||n.slice(0,3).toUpperCase()}function brDate(iso){let d=new Date(iso);return fmtDate.format(d).replace(/^./,c=>c.toUpperCase())+' às '+fmtTime.format(d)}function brDay(iso){return fmtDateShort.format(new Date(iso))}function dayKey(iso){return fmtDayKey.format(new Date(iso))}function hour(iso){return fmtTime.format(new Date(iso))}function venueInfo(v=''){return VENUE_INFO[v]||VENUE_INFO[v.replace(/, USA/g,' Stadium')]||{stadium:v.split(',')[0],city:v.split(',')[0],country:v.includes('Mexico')?'México':v.includes('Canada')?'Canadá':'Estados Unidos',klass:v.toLowerCase().includes('mexico')?'mx':v.toLowerCase().includes('canada')?'ca':'us'}}function hostInfo(v=''){let x=venueInfo(v);return {label:x.country,klass:x.klass}}function hostFlag(k){if(k==='us')return '<span class="flag-host us"></span>';return `<span class="flag-host ${k}"><span></span><span></span><span></span></span>`}function venuePt(v=''){let x=venueInfo(v);return `${x.stadium} · ${x.city}, ${x.country}`}function hostLabel(h){return h.label==='Estados Unidos'?'Jogo nos Estados Unidos':`Jogo no ${h.label}`}function statusLabel(m){if(m.status)return `<span class="${m.status==='live'?'live':'soon'}">${m.status.toUpperCase()}</span>`;let now=new Date(),start=new Date(m.utc),end=new Date(start.getTime()+2*60*60*1000);if(now>=start&&now<=end)return '<span class="live">AO VIVO</span>';if(start>now&&start-now<86400000)return '<span class="soon">EM BREVE</span>';return ''}function countdown(iso){let diff=new Date(iso)-new Date();if(diff<0)return 'Jogo iniciado ou encerrado';let d=Math.floor(diff/86400000),h=Math.floor(diff%86400000/3600000),m=Math.floor(diff%3600000/60000);if(d>0)return `Faltam ${d}d ${h}h`;if(h>0)return `Faltam ${h}h ${m}min`;return `Faltam ${m}min`}function isBrazil(m){return m.home==='Brazil'||m.away==='Brazil'||m.home==='Brasil'||m.away==='Brasil'}function key(m){return `${m.stage||m.group}|${m.home}|${m.away}|${m.utc}`}function isFav(m){return favorites.includes(key(m))}function toggleFav(k){favorites=favorites.includes(k)?favorites.filter(x=>x!==k):[...favorites,k];storageSet('copa2026_favorites',JSON.stringify(favorites));render();toast('Favoritos atualizados.')}function toast(msg){let t=el('toast');t.textContent=msg;t.style.display='block';clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.style.display='none',2200)}function miniFlag(n){let c=TEAM_COLORS[teamCode(n)]||['#ddd','#fff','#bbb'];let dark=['#000000','#012169','#002395','#002b7f','#003893','#0055a4','#006847','#0a3161','#006233','#00209f'].includes(String(c[0]).toLowerCase());return `<span class="mini-flag ${dark?'dark':''}"><span style="background:${c[0]}"></span><span style="background:${c[1]}"></span><span style="background:${c[2]}"></span><b>${teamCode(n)}</b></span>`}function teamHtml(n,side='home'){return `<span class="team ${side}">${side==='away'?`<span class="team-name">${highlight(teamName(n))}</span>${miniFlag(n)}`:`${miniFlag(n)}<span class="team-name">${highlight(teamName(n))}</span>`}</span>`}function scoreBox(m){let has=Number.isInteger(m.homeScore)&&Number.isInteger(m.awayScore);return `<div class="scorebox">${has?`<span class="scoreline">${m.homeScore} × ${m.awayScore}</span>`:hour(m.utc)}<small>${has?'Placar':'Brasília'}</small></div>`}function shareMatch(k){let m=matches.find(x=>key(x)===k);if(!m)return;let txt=`Copa 2026: ${teamName(m.home)} x ${teamName(m.away)} - ${brDate(m.utc)} (horário de Brasília). Local: ${venuePt(m.venue)}. Assista pela CazéTV: ${CAZE_URL}`;if(navigator.share)navigator.share({text:txt}).catch(()=>{});else navigator.clipboard?.writeText(txt).then(()=>toast('Mensagem copiada para compartilhar.'))}function safeOpen(url){try{let w=window.open(url,'_blank','noopener');if(!w){window.location.href=url}}catch(e){window.location.href=url}}function extractYouTubeId(input){
   let raw=String(input||'').trim();
@@ -1987,5 +1988,175 @@ try{const manifest={name:'Copa 2026 Central Premium',short_name:'Copa 2026',star
 })();
 </script>
 <!-- LIVE_SCOREBOARD_OVERRIDE_END -->
+
+
+<!-- LIVE_SCOREBOARD_FIX_V2_START -->
+<script>
+(function(){
+  // Correção: o placar antigo dizia que atualizou, mas não mexia nos jogos porque
+  // groupMatches foi declarado com let e não ficava acessível como window.groupMatches.
+  const TEAM_ALIAS = {
+    "mexico":"mexico","méxico":"mexico",
+    "south africa":"africa do sul","africa do sul":"africa do sul","áfrica do sul":"africa do sul",
+    "canada":"canada","canadá":"canada",
+    "bosnia and herzegovina":"bosnia e herzegovina","bosnia & herzegovina":"bosnia e herzegovina","bosnia-herzegovina":"bosnia e herzegovina","bosnia-herz":"bosnia e herzegovina","bósnia e herzegovina":"bosnia e herzegovina","bosnia e herzegovina":"bosnia e herzegovina",
+    "brazil":"brasil","brasil":"brasil",
+    "morocco":"marrocos","marrocos":"marrocos",
+    "haiti":"haiti",
+    "scotland":"escocia","escocia":"escocia","escócia":"escocia",
+    "south korea":"coreia do sul","korea republic":"coreia do sul","coreia do sul":"coreia do sul",
+    "czech republic":"tchequia","czechia":"tchequia","tchéquia":"tchequia","tchequia":"tchequia",
+    "germany":"alemanha","alemanha":"alemanha",
+    "curacao":"curacao","curaçao":"curacao",
+    "ivory coast":"costa do marfim","cote d ivoire":"costa do marfim","côte d ivoire":"costa do marfim","costa do marfim":"costa do marfim",
+    "ecuador":"equador","equador":"equador",
+    "switzerland":"suica","suíça":"suica","suica":"suica",
+    "qatar":"catar","catar":"catar",
+    "netherlands":"paises baixos","países baixos":"paises baixos","paises baixos":"paises baixos","holanda":"paises baixos",
+    "japan":"japao","japão":"japao","japao":"japao",
+    "senegal":"senegal",
+    "norway":"noruega","noruega":"noruega",
+    "france":"franca","frança":"franca","franca":"franca",
+    "argentina":"argentina",
+    "algeria":"argelia","argélia":"argelia","argelia":"argelia",
+    "jordan":"jordania","jordânia":"jordania","jordania":"jordania",
+    "portugal":"portugal",
+    "uzbekistan":"uzbequistao","uzbequistão":"uzbequistao","uzbequistao":"uzbequistao",
+    "colombia":"colombia","colômbia":"colombia",
+    "england":"inglaterra","inglaterra":"inglaterra",
+    "croatia":"croacia","croácia":"croacia","croacia":"croacia",
+    "ghana":"gana","gana":"gana",
+    "panama":"panama","panamá":"panama",
+    "spain":"espanha","espanha":"espanha",
+    "cape verde":"cabo verde","cabo verde":"cabo verde",
+    "saudi arabia":"arabia saudita","arábia saudita":"arabia saudita","arabia saudita":"arabia saudita",
+    "uruguay":"uruguai","uruguai":"uruguai",
+    "belgium":"belgica","bélgica":"belgica","belgica":"belgica",
+    "egypt":"egito","egito":"egito",
+    "iran":"ira","irã":"ira","ira":"ira",
+    "new zealand":"nova zelandia","nova zelândia":"nova zelandia","nova zelandia":"nova zelandia",
+    "turkiye":"turquia","turkey":"turquia","turquia":"turquia",
+    "dr congo":"rd congo","congo dr":"rd congo","rd congo":"rd congo",
+    "austria":"austria","áustria":"austria",
+    "tunisia":"tunisia","tunísia":"tunisia",
+    "iraq":"iraque","iraque":"iraque",
+    "sweden":"suecia","suécia":"suecia","suecia":"suecia",
+    "australia":"australia","austrália":"australia"
+  };
+  function plain(s){
+    return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9]+/g," ").trim();
+  }
+  function teamKey(s){
+    const p=plain(s);
+    return TEAM_ALIAS[p] || p;
+  }
+  function readScore(v){
+    if(v===undefined||v===null||v==="") return undefined;
+    const n=Number(v);
+    return Number.isFinite(n)?n:undefined;
+  }
+  function normalizeIncoming(item){
+    if(!item || typeof item!=="object") return null;
+    const home = item.home || item.homeTeam || item.home_team_name_pt || item.home_team_name_en || item.home_team_label || item.team1 || item.mandante || item.casa;
+    const away = item.away || item.awayTeam || item.away_team_name_pt || item.away_team_name_en || item.away_team_label || item.team2 || item.visitante || item.fora;
+    if(!home || !away) return null;
+    const elapsed = item.time_elapsed || item.elapsed || item.minute || item.min || item.clock || item.tempo || "";
+    let status = item.status || item.matchStatus || item.situacao || item.estado || elapsed || "scheduled";
+    if(String(item.finished||"").toLowerCase()==="true") status="finished";
+    if(String(elapsed).toLowerCase().includes("live")) status="live";
+    return {
+      home, away,
+      utc: item.utc || item.local_date || item.date || item.datetime || item.startTime || item.data || "",
+      homeScore: readScore(item.homeScore ?? item.home_score ?? item.scoreHome ?? item.homeGoals ?? item.golsCasa ?? item.placarCasa),
+      awayScore: readScore(item.awayScore ?? item.away_score ?? item.scoreAway ?? item.awayGoals ?? item.golsFora ?? item.placarFora),
+      status,
+      minute: elapsed,
+      updatedAt: item.updatedAt || item.lastUpdate || item.atualizadoEm || new Date().toISOString(),
+      source: item.source || "online"
+    };
+  }
+  function extractList(data){
+    let list=[];
+    if(Array.isArray(data)) list=data;
+    else if(Array.isArray(data?.matches)) list=data.matches;
+    else if(Array.isArray(data?.games)) list=data.games;
+    else if(Array.isArray(data?.scores)) list=data.scores;
+    else if(Array.isArray(data?.data?.games)) list=data.data.games;
+    else if(Array.isArray(data?.data?.matches)) list=data.data.matches;
+    else if(data && typeof data==="object") list=Object.values(data);
+    return list.map(normalizeIncoming).filter(Boolean);
+  }
+  function sameGame(a,b){
+    if(!a||!b) return false;
+    const teamsSame = (teamKey(a.home)===teamKey(b.home) && teamKey(a.away)===teamKey(b.away)) || (teamKey(a.home)===teamKey(b.away) && teamKey(a.away)===teamKey(b.home));
+    if(!teamsSame) return false;
+    if(a.utc && b.utc){
+      const da=new Date(a.utc), db=new Date(b.utc);
+      if(!isNaN(da) && !isNaN(db)) return Math.abs(da-db) < 18*60*60*1000;
+    }
+    return true;
+  }
+  async function getScores(url){
+    const finalUrl = url + (url.includes("?")?"&":"?") + "v=" + Date.now();
+    const res = await fetch(finalUrl,{cache:"no-store"});
+    const text = await res.text();
+    if(!res.ok) throw new Error("HTTP "+res.status+" em "+url+" · "+text.slice(0,120));
+    let data;
+    try{ data = JSON.parse(text); }catch(e){ throw new Error("Resposta não é JSON em "+url); }
+    return extractList(data);
+  }
+  function sourceUrls(){
+    let custom="";
+    try{custom=localStorage.getItem("copa2026_live_score_url")||""}catch(e){}
+    const urls=[];
+    if(custom.trim()) urls.push(custom.trim());
+    urls.push("/.netlify/functions/wc26-placares");
+    urls.push("./placares.json");
+    urls.push("./scores.json");
+    return [...new Set(urls)];
+  }
+  window.atualizarPlacarAoVivo = async function(){
+    const statusEl=document.getElementById("liveScoreStatus");
+    if(statusEl) statusEl.textContent="Buscando placar online...";
+    let lastError="";
+    for(const url of sourceUrls()){
+      try{
+        const incoming = await getScores(url);
+        if(!incoming.length){ lastError="fonte respondeu, mas sem jogos"; continue; }
+        const current = (window.__copaGetGroupMatches && window.__copaGetGroupMatches()) || [];
+        let synced=0, changed=0;
+        const next = current.map(m=>{
+          const f = incoming.find(x=>sameGame(m,x));
+          if(!f) return m;
+          synced++;
+          const oldHs=m.homeScore, oldAs=m.awayScore, oldSt=m.status, oldMin=m.minute;
+          const nm={...m};
+          if(Number.isInteger(f.homeScore)) nm.homeScore=f.homeScore;
+          if(Number.isInteger(f.awayScore)) nm.awayScore=f.awayScore;
+          if(f.status) nm.status=f.status;
+          if(f.minute) nm.minute=f.minute;
+          nm.updatedAt=f.updatedAt || new Date().toISOString();
+          nm.scoreSource=f.source || url;
+          if(oldHs!==nm.homeScore || oldAs!==nm.awayScore || oldSt!==nm.status || oldMin!==nm.minute) changed++;
+          return nm;
+        });
+        if(window.__copaSetGroupMatches) window.__copaSetGroupMatches(next);
+        else if(typeof render==="function") render();
+        const msg = `Fonte online respondeu ${incoming.length} jogos · sincronizados ${synced} · alterados ${changed}. ${changed===0?'Se continuar 0 × 0, a fonte online ainda está enviando esse placar.':''}`;
+        if(statusEl) statusEl.textContent=msg;
+        if(typeof toast==="function") toast(`Placar verificado: ${synced} jogos sincronizados.`);
+        return true;
+      }catch(err){
+        lastError = err && err.message ? err.message : String(err);
+        console.warn("Falha no placar online", url, err);
+      }
+    }
+    if(statusEl) statusEl.textContent="Não consegui buscar placar online. Erro: "+lastError;
+    if(typeof toast==="function") toast("Não consegui buscar o placar online.");
+    return false;
+  };
+})();
+</script>
+<!-- LIVE_SCOREBOARD_FIX_V2_END -->
 
 </body></html>
