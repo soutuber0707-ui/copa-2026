@@ -1835,8 +1835,8 @@ try{const manifest={name:'Copa 2026 Central Premium',short_name:'Copa 2026',star
   const SCORE_REFRESH_MS = 30000;
   const SCORE_URL_KEY = "copa2026_live_score_url";
   const DEFAULT_SCORE_URLS = [
-  "/.netlify/functions/wc26-placares"
-];
+    "/.netlify/functions/wc26-placares"
+  ];
 
   function safeGet(k,fallback){
     try{return localStorage.getItem(k)||fallback}catch(e){return fallback}
@@ -1851,12 +1851,35 @@ try{const manifest={name:'Copa 2026 Central Premium',short_name:'Copa 2026',star
       .replace(/[^a-z0-9]+/g," ")
       .trim();
   }
+  function normTeamName(s){
+    let x=norm(s);
+    const alias={
+      "usa":"usa","united states":"usa","united states of america":"usa","estados unidos":"usa","estados unidos da america":"usa",
+      "paraguay":"paraguay","paraguai":"paraguay",
+      "south africa":"south africa","africa do sul":"south africa",
+      "south korea":"south korea","coreia do sul":"south korea","korea republic":"south korea",
+      "czech republic":"czech republic","czechia":"czech republic","tchequia":"czech republic",
+      "bosnia and herzegovina":"bosnia & herzegovina","bosnia herzegovina":"bosnia & herzegovina","bosnia & herzegovina":"bosnia & herzegovina","bosnia e herzegovina":"bosnia & herzegovina",
+      "brazil":"brazil","brasil":"brazil","morocco":"morocco","marrocos":"morocco","haiti":"haiti","scotland":"scotland","escocia":"scotland",
+      "germany":"germany","alemanha":"germany","curacao":"curacao","curacao":"curacao","ivory coast":"ivory coast","costa do marfim":"ivory coast","cote d ivoire":"ivory coast",
+      "ecuador":"ecuador","equador":"ecuador","switzerland":"switzerland","suica":"switzerland","qatar":"qatar","catar":"qatar",
+      "netherlands":"netherlands","paises baixos":"netherlands","japan":"japan","japao":"japan","senegal":"senegal","norway":"norway","noruega":"norway",
+      "france":"france","franca":"france","argentina":"argentina","algeria":"algeria","argelia":"algeria","jordan":"jordan","jordania":"jordan",
+      "portugal":"portugal","uzbekistan":"uzbekistan","uzbequistao":"uzbekistan","colombia":"colombia","colombia":"colombia",
+      "england":"england","inglaterra":"england","croatia":"croatia","croacia":"croatia","ghana":"ghana","gana":"ghana","panama":"panama",
+      "spain":"spain","espanha":"spain","cape verde":"cape verde","cabo verde":"cape verde","saudi arabia":"saudi arabia","arabia saudita":"saudi arabia",
+      "uruguay":"uruguay","uruguai":"uruguay","belgium":"belgium","belgica":"belgium","egypt":"egypt","egito":"egypt","iran":"iran","ira":"iran",
+      "new zealand":"new zealand","nova zelandia":"new zealand","turkey":"turkey","turkiye":"turkey","turquia":"turkey","dr congo":"dr congo","rd congo":"dr congo",
+      "austria":"austria","austria":"austria","tunisia":"tunisia","tunisia":"tunisia","iraq":"iraq","iraque":"iraq","sweden":"sweden","suecia":"sweden"
+    };
+    return alias[x]||x;
+  }
   function matchKeySimple(m){
     return [m.group||m.stage||"",m.home,m.away,m.utc].map(norm).join("|");
   }
   function sameGame(a,b){
     if(!a||!b)return false;
-    const ah=norm(a.home), aa=norm(a.away), bh=norm(b.home), ba=norm(b.away);
+    const ah=normTeamName(a.home), aa=normTeamName(a.away), bh=normTeamName(b.home), ba=normTeamName(b.away);
     const teamsSame = (ah===bh && aa===ba) || (ah===ba && aa===bh);
     if(!teamsSame)return false;
     if(a.utc && b.utc){
