@@ -1835,13 +1835,8 @@ try{const manifest={name:'Copa 2026 Central Premium',short_name:'Copa 2026',star
   const SCORE_REFRESH_MS = 30000;
   const SCORE_URL_KEY = "copa2026_live_score_url";
   const DEFAULT_SCORE_URLS = [
-    "/.netlify/functions/wc26-placares",
-    "https://worldcup26.ir/get/games",
-    "/.netlify/functions/placares",
-    "./copa2026_schedule.json",
-    "./placares.json",
-    "./scores.json"
-  ];
+  "/.netlify/functions/wc26-placares"
+];
 
   function safeGet(k,fallback){
     try{return localStorage.getItem(k)||fallback}catch(e){return fallback}
