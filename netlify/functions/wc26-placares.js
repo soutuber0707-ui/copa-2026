@@ -1,23 +1,113 @@
 // netlify/functions/wc26-placares.js
-// Proxy para placares da Copa 2026. Ele evita CORS e normaliza os nomes para bater
-// com a tabela em português do index.html.
+// Proxy para placares da Copa 2026. Corrigido para combinar os nomes do JSON com o index.html.
 
 const API_URL = "https://worldcup26.ir/get/games";
 
-const EN_TO_PT = {
-  "Mexico":"México", "South Africa":"África do Sul", "Canada":"Canadá", "Bosnia and Herzegovina":"Bósnia e Herzegovina", "Bosnia & Herzegovina":"Bósnia e Herzegovina",
-  "Brazil":"Brasil", "Morocco":"Marrocos", "Haiti":"Haiti", "Scotland":"Escócia", "South Korea":"Coreia do Sul", "Czech Republic":"Tchéquia", "Czechia":"Tchéquia",
-  "Australia":"Austrália", "Germany":"Alemanha", "Curacao":"Curaçao", "Curaçao":"Curaçao", "Ivory Coast":"Costa do Marfim", "Côte d'Ivoire":"Costa do Marfim",
-  "Ecuador":"Equador", "Switzerland":"Suíça", "Qatar":"Catar", "Netherlands":"Países Baixos", "Japan":"Japão", "Senegal":"Senegal", "Norway":"Noruega",
-  "France":"França", "Argentina":"Argentina", "Algeria":"Argélia", "Jordan":"Jordânia", "Portugal":"Portugal", "Uzbekistan":"Uzbequistão",
-  "Colombia":"Colômbia", "England":"Inglaterra", "Croatia":"Croácia", "Ghana":"Gana", "Panama":"Panamá", "Spain":"Espanha", "Cape Verde":"Cabo Verde",
-  "Saudi Arabia":"Arábia Saudita", "Uruguay":"Uruguai", "Belgium":"Bélgica", "Egypt":"Egito", "Iran":"Irã", "New Zealand":"Nova Zelândia", "Turkey":"Turquia", "Turkiye":"Turquia",
-  "DR Congo":"RD Congo", "Austria":"Áustria", "Tunisia":"Tunísia", "Iraq":"Iraque", "Sweden":"Suécia", "USA":"Estados Unidos", "United States":"Estados Unidos", "United States of America":"Estados Unidos"
+const CANON = {
+  "United States":"USA",
+  "United States of America":"USA",
+  "USA":"USA",
+  "US":"USA",
+  "Estados Unidos":"USA",
+  "Estados Unidos da América":"USA",
+  "Paraguay":"Paraguay",
+  "Paraguai":"Paraguay",
+  "Mexico":"Mexico",
+  "México":"Mexico",
+  "South Africa":"South Africa",
+  "África do Sul":"South Africa",
+  "South Korea":"South Korea",
+  "Korea Republic":"South Korea",
+  "Coreia do Sul":"South Korea",
+  "Czechia":"Czech Republic",
+  "Czech Republic":"Czech Republic",
+  "Tchéquia":"Czech Republic",
+  "Bosnia and Herzegovina":"Bosnia & Herzegovina",
+  "Bosnia & Herzegovina":"Bosnia & Herzegovina",
+  "Bósnia e Herzegovina":"Bosnia & Herzegovina",
+  "Brazil":"Brazil",
+  "Brasil":"Brazil",
+  "Morocco":"Morocco",
+  "Marrocos":"Morocco",
+  "Haiti":"Haiti",
+  "Scotland":"Scotland",
+  "Escócia":"Scotland",
+  "Australia":"Australia",
+  "Austrália":"Australia",
+  "Germany":"Germany",
+  "Alemanha":"Germany",
+  "Curacao":"Curacao",
+  "Curaçao":"Curacao",
+  "Ivory Coast":"Ivory Coast",
+  "Côte d'Ivoire":"Ivory Coast",
+  "Costa do Marfim":"Ivory Coast",
+  "Ecuador":"Ecuador",
+  "Equador":"Ecuador",
+  "Switzerland":"Switzerland",
+  "Suíça":"Switzerland",
+  "Qatar":"Qatar",
+  "Catar":"Qatar",
+  "Netherlands":"Netherlands",
+  "Países Baixos":"Netherlands",
+  "Japan":"Japan",
+  "Japão":"Japan",
+  "Senegal":"Senegal",
+  "Norway":"Norway",
+  "Noruega":"Norway",
+  "France":"France",
+  "França":"France",
+  "Argentina":"Argentina",
+  "Algeria":"Algeria",
+  "Argélia":"Algeria",
+  "Jordan":"Jordan",
+  "Jordânia":"Jordan",
+  "Portugal":"Portugal",
+  "Uzbekistan":"Uzbekistan",
+  "Uzbequistão":"Uzbekistan",
+  "Colombia":"Colombia",
+  "Colômbia":"Colombia",
+  "England":"England",
+  "Inglaterra":"England",
+  "Croatia":"Croatia",
+  "Croácia":"Croatia",
+  "Ghana":"Ghana",
+  "Gana":"Ghana",
+  "Panama":"Panama",
+  "Panamá":"Panama",
+  "Spain":"Spain",
+  "Espanha":"Spain",
+  "Cape Verde":"Cape Verde",
+  "Cabo Verde":"Cape Verde",
+  "Saudi Arabia":"Saudi Arabia",
+  "Arábia Saudita":"Saudi Arabia",
+  "Uruguay":"Uruguay",
+  "Uruguai":"Uruguay",
+  "Belgium":"Belgium",
+  "Bélgica":"Belgium",
+  "Egypt":"Egypt",
+  "Egito":"Egypt",
+  "Iran":"Iran",
+  "Irã":"Iran",
+  "New Zealand":"New Zealand",
+  "Nova Zelândia":"New Zealand",
+  "Turkey":"Turkey",
+  "Turkiye":"Turkey",
+  "Turquia":"Turkey",
+  "DR Congo":"DR Congo",
+  "RD Congo":"DR Congo",
+  "Austria":"Austria",
+  "Áustria":"Austria",
+  "Tunisia":"Tunisia",
+  "Tunísia":"Tunisia",
+  "Iraq":"Iraq",
+  "Iraque":"Iraq",
+  "Sweden":"Sweden",
+  "Suécia":"Sweden"
 };
 
-function pt(name){
+function canon(name){
   const s = String(name || "").trim();
-  return EN_TO_PT[s] || s;
+  return CANON[s] || s;
 }
 function readScore(v){
   if(v === undefined || v === null || v === "") return undefined;
@@ -41,8 +131,8 @@ function normalizeGame(g){
   if(String(elapsed).toLowerCase().includes("live")) status = "live";
 
   return {
-    home: pt(homeRaw),
-    away: pt(awayRaw),
+    home: canon(homeRaw),
+    away: canon(awayRaw),
     utc: pick(g,["utc","local_date","date","datetime","startTime","data"]) || "",
     homeScore: readScore(g.home_score ?? g.homeScore ?? g.scoreHome ?? g.homeGoals),
     awayScore: readScore(g.away_score ?? g.awayScore ?? g.scoreAway ?? g.awayGoals),
@@ -66,20 +156,20 @@ exports.handler = async function(){
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store"
   };
+
   try{
     const res = await fetch(API_URL, {
       headers: {
         "Accept": "application/json",
-        "User-Agent": "Mozilla/5.0 Copa2026LiveScore/2.0"
+        "User-Agent": "Mozilla/5.0 Copa2026LiveScore/1.0"
       }
     });
-    const raw = await res.text();
-    if(!res.ok) return { statusCode: res.status, headers, body: JSON.stringify({ error:"API HTTP "+res.status, raw: raw.slice(0,500) }) };
-    let data;
-    try{ data = JSON.parse(raw); }catch(e){ return { statusCode: 502, headers, body: JSON.stringify({ error:"API não retornou JSON", raw: raw.slice(0,500) }) }; }
-    const games = listFrom(data);
-    const matches = games.map(normalizeGame).filter(m => m.home && m.away);
-    return { statusCode: 200, headers, body: JSON.stringify({ matches, count: matches.length, fetchedAt: new Date().toISOString() }) };
+    const data = await res.json().catch(async () => ({ raw: await res.text() }));
+    if(!res.ok){
+      return { statusCode: res.status, headers, body: JSON.stringify({ error: "API HTTP " + res.status, data }) };
+    }
+    const matches = listFrom(data).map(normalizeGame).filter(m => m.home && m.away);
+    return { statusCode: 200, headers, body: JSON.stringify({ matches, fetchedAt: new Date().toISOString() }) };
   }catch(err){
     return { statusCode: 500, headers, body: JSON.stringify({ error: String(err && err.message || err), fetchedAt: new Date().toISOString() }) };
   }
